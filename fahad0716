@@ -1,0 +1,132 @@
+import sqlite3
+import time
+import random
+
+# Database setup
+def setup_database():
+    connection = sqlite3.connect('airplane_radar.db')
+    cursor = connection.cursor()
+    
+    cursor.execute('''CREATE TABLE IF NOT EXISTS airplanes (
+                        id INTEGER PRIMARY KEY,
+                        flight_number TEXT,
+                        altitude INTEGER,
+                        latitude REAL,
+                        longitude REAL
+                    )''')
+    
+    connection.commit()
+    connection.close()
+
+# Add a new airplane to the database
+def add_airplane(flight_number, altitude, latitude, longitude):
+    connection = sqlite3.connect('airplane_radar.db')
+    cursor = connection.cursor()
+    
+    cursor.execute('''INSERT INTO airplanes (flight_number, altitude, latitude, longitude)
+                      VALUES (?, ?, ?, ?)''',
+                   (flight_number, altitude, latitude, longitude))
+    
+    connection.commit()
+    connection.close()
+
+# Update an existing airplane's data
+def update_airplane(flight_number, altitude, latitude, longitude):
+    connection = sqlite3.connect('airplane_radar.db')
+    cursor = connection.cursor()
+    
+    cursor.execute('''UPDATE airplanes
+                      SET altitude = ?, latitude = ?, longitude = ?
+                      WHERE flight_number = ?''',
+                   (altitude, latitude, longitude, flight_number))
+    
+    connection.commit()
+    connection.close()
+
+# Fetch all airplanes from the database
+def fetch_airplanes():
+    connection = sqlite3.connect('airplane_radar.db')
+    cursor = connection.cursor()
+    
+    cursor.execute('SELECT * FROM airplanes')
+    airplanes = cursor.fetchall()
+    
+    connection.close()
+    return airplanes
+
+# Display the fetched airplane data
+def display_airplanes(airplanes):
+    if not airplanes:
+        print("No airplanes in the database.")
+        return
+    
+    print("\nAirplane Radar Data:")
+    print("Flight Number | Altitude | Latitude | Longitude")
+    print("----------------------------------------------")
+    for airplane in airplanes:
+        print(f"{airplane[1]}           {airplane[2]}       {airplane[3]}     {airplane[4]}")
+    print()
+
+# Simulate airplane movement
+def simulate_airplane_movement():
+    while True:
+        airplanes = fetch_airplanes()
+        for airplane in airplanes:
+            new_altitude = airplane[2] + random.randint(-1000, 1000)
+            new_latitude = airplane[3] + random.uniform(-0.01, 0.01)
+            new_longitude = airplane[4] + random.uniform(-0.01, 0.01)
+            
+            update_airplane(airplane[1], new_altitude, new_latitude, new_longitude)
+        
+        print("\nUpdated Airplane Positions:")
+        display_airplanes(fetch_airplanes())
+        
+        time.sleep(5)  # Wait for 5 seconds before the next update
+
+# CLI interface
+def radar_cli():
+    setup_database()
+
+    while True:
+        print("\nAirplane Radar Tracker")
+        print("1. Add a new airplane")
+        print("2. Update an airplane")
+        print("3. Display all airplanes")
+        print("4. Start airplane movement simulation")
+        print("5. Exit")
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            flight_number = input("Enter flight number: ")
+            altitude = int(input("Enter altitude: "))
+            latitude = float(input("Enter latitude: "))
+            longitude = float(input("Enter longitude: "))
+            add_airplane(flight_number, altitude, latitude, longitude)
+            print(f"Airplane {flight_number} added successfully!")
+
+        elif choice == '2':
+            flight_number = input("Enter flight number to update: ")
+            altitude = int(input("Enter new altitude: "))
+            latitude = float(input("Enter new latitude: "))
+            longitude = float(input("Enter new longitude: "))
+            update_airplane(flight_number, altitude, latitude, longitude)
+            print(f"Airplane {flight_number} updated successfully!")
+
+        elif choice == '3':
+            airplanes = fetch_airplanes()
+            display_airplanes(airplanes)
+
+        elif choice == '4':
+            print("Starting simulation...")
+            simulate_airplane_movement()
+
+        elif choice == '5':
+            print("Exiting radar tracker.")
+            break
+
+        else:
+            print("Invalid choice, please try again.")
+
+if __name__ == "__main__":
+    radar_cli()
+
